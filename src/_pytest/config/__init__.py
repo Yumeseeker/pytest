@@ -1820,6 +1820,15 @@ class Config:
             else:
                 raise
 
+        if self.known_args_namespace.help_group is not False:
+            available_groups = [group.name for group in self._parser._groups]
+            if self.known_args_namespace.help_group not in available_groups:
+                raise UsageError(
+                    f"unknown help group {self.known_args_namespace.help_group!r}; "
+                    f"available groups: {', '.join(available_groups)}"
+                )
+            self.option.help_group = self.known_args_namespace.help_group
+
         try:
             self._parser.parse(args, namespace=self.option)
         except PrintHelp:

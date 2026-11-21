@@ -22,7 +22,7 @@ import pytest
 
 class HelpAction(argparse.Action):
     """An argparse Action that will raise a PrintHelp exception in order to skip
-    the rest of the argument parsing when --help is passed.
+    the rest of the argument parsing when a help option is passed.
 
     This prevents argparse from raising UsageError when `--help` is used along
     with missing required arguments when any are defined, for example by
@@ -34,12 +34,17 @@ class HelpAction(argparse.Action):
     """
 
     def __init__(
-        self, option_strings: Sequence[str], dest: str, *, help: str | None = None
+        self,
+        option_strings: Sequence[str],
+        dest: str,
+        *,
+        help: str | None = None,
+        nargs: int | str | None = 0,
     ) -> None:
         super().__init__(
             option_strings=option_strings,
             dest=dest,
-            nargs=0,
+            nargs=nargs,
             const=True,
             default=False,
             help=help,
@@ -52,7 +57,11 @@ class HelpAction(argparse.Action):
         values: str | Sequence[Any] | None,
         option_string: str | None = None,
     ) -> None:
-        setattr(namespace, self.dest, self.const)
+        if self.nargs == 0:
+            setattr(namespace, self.dest, self.const)
+        else:
+            setattr(namespace, self.dest, values)
+        setattr(namespace, "help", True)
 
         if getattr(namespace, "_raise_print_help", False):
             raise PrintHelp
@@ -75,6 +84,13 @@ def pytest_addoption(parser: Parser) -> None:
         action=HelpAction,
         dest="help",
         help="Show help message and configuration info",
+    )
+    group.addoption(
+        "--help-group",
+        action=HelpAction,
+        nargs=None,
+        dest="help_group",
+        help="Show help for a specific option group.",
     )
     group._addoption(  # private to use reserved lower-case short option
         "-p",
