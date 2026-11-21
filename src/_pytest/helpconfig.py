@@ -33,11 +33,22 @@ class HelpAction(argparse.Action):
     `namespace._raise_print_help = True`. Otherwise it just sets the option.
     """
 
-    def __init__(self, option_strings: Sequence[str], dest: str, **kwargs: Any) -> None:
-        kwargs.setdefault("nargs", 0)
-        kwargs.setdefault("const", True)
-        kwargs.setdefault("default", False)
-        super().__init__(option_strings, dest, **kwargs)
+    def __init__(
+        self,
+        option_strings: Sequence[str],
+        dest: str,
+        *,
+        help: str | None = None,
+        nargs: int | str | None = 0,
+    ) -> None:
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=True,
+            default=False,
+            help=help,
+        )
 
     def __call__(
         self,
@@ -46,8 +57,10 @@ class HelpAction(argparse.Action):
         values: str | Sequence[Any] | None,
         option_string: str | None = None,
     ) -> None:
-        value = self.const if self.nargs == 0 else values
-        setattr(namespace, self.dest, value)
+        if self.nargs == 0:
+            setattr(namespace, self.dest, self.const)
+        else:
+            setattr(namespace, self.dest, values)
         setattr(namespace, "help", True)
 
         if getattr(namespace, "_raise_print_help", False):
@@ -76,9 +89,7 @@ def pytest_addoption(parser: Parser) -> None:
         "--help-group",
         action=HelpAction,
         nargs=None,
-        default=None,
         dest="help_group",
-        metavar="GROUP",
         help="Show help for a specific option group.",
     )
     group._addoption(  # private to use reserved lower-case short option
